@@ -5,6 +5,8 @@ import os
 import random
 import re
 import subprocess
+from threading import Thread
+from queue import LifoQueue, Empty
 import sys
 from datetime import datetime
 
@@ -14,6 +16,23 @@ import texttable as tt
 from plotman import manager, plot_util
 
 # TODO : write-protect and delete-protect archived plots
+
+archive_job_status_list = []
+
+def enqueue_output(out, queue):
+    for line in out:
+        # We only hold the most recent 3 lines to prevent
+        # any memory leaks. 3 is good just in case we consume an item
+        # while another thread tries to read it
+        if queue.full():
+            try:
+                # Toss out old data to make room for new data
+                oldest_data = queue.get()
+            except Empty:
+                pass
+        # Put the latest data onto the stack
+        queue.put(line.strip())
+    out.close()
 
 def compute_priority(phase, gb_free, n_plots):
     # All these values are designed around dst buffer dirs of about
@@ -108,7 +127,7 @@ def archive(dir_cfg, all_jobs):
             chosen_plot = dir_plots[0]
 
     if not chosen_plot:
-        return (False, 'No plots found')
+        return 'No plots found'
 
     # TODO: sanity check that archive machine is available
     # TODO: filter drives mounted RO
@@ -118,8 +137,8 @@ def archive(dir_cfg, all_jobs):
     #
     archdir_freebytes = get_archdir_freebytes(dir_cfg.archive)
     if not archdir_freebytes:
-        return(False, 'No free archive dirs found.')
-    
+        return 'No free archive dirs found.'
+
     archdir = ''
     available = [(d, space) for (d, space) in archdir_freebytes.items() if 
                  space > 1.2 * plot_util.get_k32_plotsize()]
@@ -128,13 +147,52 @@ def archive(dir_cfg, all_jobs):
         (archdir, freespace) = sorted(available)[index]
 
     if not archdir:
-        return(False, 'No archive directories found with enough free space')
-    
+        return 'No archive directories found with enough free space'
+
+    arch_jobs = get_running_archive_jobs(dir_cfg.archive)
+    if arch_jobs:
+        # Create empty status string to hold arch job data
+        status = ''
+        for j in archive_job_status_list:
+            try:
+                rsync_output = j['queue'].get_nowait()
+
+                # Ensure we have a line of data and that this data is not just the filename of the plot
+                if (rsync_output is None) or (rsync_output in j['chosen_plot']):
+                    rsync_output = 'No data yet.'
+
+                # Add status to output string
+                status += ' Status: Moving ' + j['chosen_plot'] + ' to ' + j['archdir'] + '. Progress: ' + rsync_output + '\n'
+
+            except Empty:
+                pass
+
+        return 'Arch job(s) already running.{status}'.format(**locals())
+
     msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
 
     bwlimit = dir_cfg.archive.rsyncd_bwlimit
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-    cmd = ('rsync %s --remove-source-files -P %s %s' %
+    cmd = ('rsync %s --remove-source-files -P --outbuf=L %s %s' %
             (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
 
-    return (True, cmd)
+    p = subprocess.Popen(cmd,
+            shell=True,
+            start_new_session=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1,
+            universal_newlines=True)
+
+    # Use a stack type queue, otherwise the lines bunch up and are processed in order, 
+    # returning only the very oldest rsync data
+    q = LifoQueue(maxsize=3)
+    t = Thread(target=enqueue_output, args=(p.stdout, q))
+    t.daemon = True # thread dies with the program
+    t.start()
+    archive_job_status_list.append({
+        "queue": q,
+        "chosen_plot": chosen_plot,
+        "archdir": archdir
+    })
+    return cmd
