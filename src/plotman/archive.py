@@ -173,7 +173,7 @@ def archive(dir_cfg, all_jobs):
 
     bwlimit = dir_cfg.archive.rsyncd_bwlimit
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
-    cmd = ('rsync %s --remove-source-files -P --outbuf=L %s %s' %
+    cmd = ('rsync %s --remove-source-files -P --outbuf=L --preallocate %s %s' %
             (throttle_arg, chosen_plot, rsync_dest(dir_cfg.archive, archdir)))
 
     p = subprocess.Popen(cmd,

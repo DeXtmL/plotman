@@ -176,8 +176,8 @@ def main():
             firstit = True
             while True:
                 if not firstit:
-                    print('Sleeping 60s until next iteration...')
-                    time.sleep(60)
+                    print('Sleeping 30s until next iteration...')
+                    time.sleep(30)
                     jobs = Job.get_running_jobs(cfg.directories.log)
                 firstit = False
                 print(archive.archive(cfg.directories, jobs))
