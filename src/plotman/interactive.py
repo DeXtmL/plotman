@@ -253,8 +253,11 @@ def curses_main(stdscr):
         
 
         # Jobs
-        jobs_win.addnstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, 
-            tmp_prefix, dst_prefix), linecap)
+        try:
+            jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, 
+                tmp_prefix, dst_prefix))
+        except Exception:
+            jobs_win.addstr(0, 0, "string too long")
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 
         # Dirs
