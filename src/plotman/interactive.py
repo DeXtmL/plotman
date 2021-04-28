@@ -65,7 +65,7 @@ def curses_main(stdscr):
 
     cfg = configuration.get_validated_configs()
 
-    plotting_active = True
+    plotting_active = False
     archiving_configured = cfg.directories.archive is not None
     archiving_active = archiving_configured
 
@@ -253,8 +253,8 @@ def curses_main(stdscr):
         
 
         # Jobs
-        jobs_win.addstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, 
-            tmp_prefix, dst_prefix))
+        jobs_win.addnstr(0, 0, reporting.status_report(jobs, n_cols, jobs_h, 
+            tmp_prefix, dst_prefix), linecap)
         jobs_win.chgat(0, 0, curses.A_REVERSE)
 
         # Dirs
