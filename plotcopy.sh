@@ -12,9 +12,10 @@ server="dbkisd2"
 #global defaults
 LOG_DIR="./logs"
 PLOT_FINAL_SIZE=$((109000000000/1024))
-PLOT_FOLDERS=("/home/dlx/testcopy/syncdir/")
-REMOTE_PLOT_FOLDERS=("/home/dbkissd2/Videos")
-# REMOTE_PLOT_FOLDERS=("/mnt/sdc/" "/mnt/sdd/" "/mnt/sd3/" "/mnt/sdg/" "/mnt/sdh/" "/mnt/sdj/" "/mnt/sdk/" "/mnt/sdl/")
+# dir paths need a trailing /, support multiple PLOT_FOLDERS and REMOTE_PLOT_FOLDERS
+PLOT_FOLDERS=("/plot_tmp_dst/")
+# REMOTE_PLOT_FOLDERS=("/home/")
+REMOTE_PLOT_FOLDERS=("/mnt/sdc/" "/mnt/sdd/" "/mnt/sd3/" "/mnt/sdg/" "/mnt/sdh/" "/mnt/sdj/" "/mnt/sdk/" "/mnt/sdl/")
 MAX_PARALLEL=3
 deleteSource="true"
 doHash="false"
@@ -201,8 +202,7 @@ getMaxFitablePlots()
 	local driveSize=$1;
 	local amt=$(((($driveSize - ($driveSize*$driveSpaceBuffer)))/$PLOT_FINAL_SIZE))
 	local rounded=$( printf %.0f "$amt" )
-	# echo $rounded
-    echo 2
+	echo $rounded
 }
 
 getPlotList()
