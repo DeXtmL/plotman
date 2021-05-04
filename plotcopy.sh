@@ -15,7 +15,7 @@ PLOT_FINAL_SIZE=$((109000000000/1024))
 # dir paths need a trailing /, support multiple PLOT_FOLDERS and REMOTE_PLOT_FOLDERS
 PLOT_FOLDERS=("/plot_tmp_dst/")
 # REMOTE_PLOT_FOLDERS=("/home/")
-REMOTE_PLOT_FOLDERS=("/plots/" "/mnt/sdc/" "/mnt/sdd/" "/mnt/sd3/" "/mnt/sdg/" "/mnt/sdh/" "/mnt/sdj/" "/mnt/sdk/" "/mnt/sdl/")
+REMOTE_PLOT_FOLDERS=("/plots/" "/mnt/sdc/" "/mnt/sdd/" "/mnt/sde/" "/mnt/sdg/" "/mnt/sdh/" "/mnt/sdj/" "/mnt/sdk/" "/mnt/sdl/")
 MAX_PARALLEL=3
 deleteSource="true"
 doHash="false"
